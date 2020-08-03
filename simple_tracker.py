@@ -10,6 +10,7 @@ from amazon_config import(
   DIRECTORY
 )
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import *
 import time
 
 class GenerateReport:
@@ -62,6 +63,62 @@ class AmazonAPI:
     self.driver.get(f"{product_short_url}?language=en_GB")
     time.sleep(2)
 
+    title = self.get_title()
+    seller = self.get_seller()
+    price = self.get_price()
+
+  def get_title(self):
+    try:
+      # Fetch the title text of the item
+      return self.driver.find_element_by_id('productTitle').text
+    except Exception as e:
+      print(e)
+      print(f"Can't get title of a product - {self.driver.current_url}")
+      return None
+
+  def get_seller(self):
+    try:
+      return self.driver.find_element_by_id('bylineInfo').text
+    except Exception as e:
+      print(e)
+      print(f"Can't get seller of a product - {self.driver.current_url}")
+      return None
+
+  def get_price(self):
+    price = None
+    try:
+      price = self.driver.find_element_by_id('priceblock_ourprice').text
+      price = self.convert_price(price)
+    except NoSuchElementException:
+      try:
+          availability = self.driver.find_element_by_id('availability').text
+          if 'Available' in availability:
+              price = self.driver.find_element_by_class_name('olp-padding-right').text
+              price = price[price.find(self.currency):]
+              price = self.convert_price(price)
+      except Exception as e:
+          print(e)
+          print(f"Can't get price of a product - {self.driver.current_url}")
+          return None
+    except Exception as e:
+        print(e)
+        print(f"Can't get price of a product - {self.driver.current_url}")
+        return None
+    return price
+
+    # Convert the price string to a float
+    def convert_price(self, price):
+        price = price.split(self.currency)[1]
+        try:
+            price = price.split("\n")[0] + "." + price.split("\n")[1]
+        except:
+            Exception()
+        try:
+            price = price.split(",")[0] + price.split(",")[1]
+        except:
+            Exception()
+        return float(price)
+    
   # Remove all unnecessary attributes/product names/keywords from the long URL
   # This makes sure that our code works even if product names are changed (the ASIN never changes) 
   def shorten_url(self, asin):
