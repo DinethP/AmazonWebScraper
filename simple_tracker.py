@@ -9,6 +9,8 @@ from amazon_config import(
   BASE_URL,
   DIRECTORY
 )
+from selenium.webdriver.common.keys import Keys
+import time
 
 class GenerateReport:
   def __init__(self):
@@ -21,20 +23,24 @@ class AmazonAPI:
     options = get_web_driver_options() #Fetch the options
     set_ignore_certificate_error(options)
     set_browser_as_incognito(options)
-    self.driver = get_chrome_web_driver(options)
+    self.driver = get_chrome_web_driver(options) # Call the webdriver with the added flags (options)
     self.currency = currency
-    self.price_filter = f"&rh=p_36%3A{filters['min']}00-{filters['max']}00"   # Filter the URL to set min/max price
+    self.price_filter = f"&rh=p_36%3A{filters['min']}00-{filters['max']}00"   # Add price min and max to amazon url
     pass
 
   def run(self):
     print("Starting script...")
-    print(f"Looking fir {self.search_term} prodcuts...")
+    print(f"Looking for {self.search_term} prodcuts...")
     links = self.get_products_links()
-
+    time.sleep(3)
     self.driver.quit()
 
   def get_products_links(self):
-    self.driver.get(self.base_url)
+    self.driver.get(self.base_url) # Open up the amazon website homepage using webdriver
+    element = self.driver.find_element_by_id("twotabsearchtextbox")
+    element.send_keys(self.search_term)
+    element.send_keys(Keys.ENTER)
+    time.sleep(2) # Wait to load page
 
 
 if __name__ == '__main__':
