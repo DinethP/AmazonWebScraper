@@ -11,11 +11,43 @@ from amazon_config import(
 )
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import *
+import json
+from datetime import datetime
 import time
 
 class GenerateReport:
-  def __init__(self):
-    pass
+  def __init__(self, file_name, filters, base_link, currency, data):
+    self.data = data
+    self.file_name = file_name
+    self.filters = filters
+    self.base_link = base_link
+    self.currency = currency
+    report = {
+      'title': self.file_name,
+      'date': self.get_now(),
+      'best_item': self.get_best_item(),
+      'currency': self.currency,
+      'filters': self.filters,
+      'base_link': self.base_link,
+      'products': self.data
+    }
+    print("Creating report...")
+    with open(f'{DIRECTORY}/{file_name}.json', 'w') as f:
+        json.dump(report, f)
+    print("Done...")
+
+  def get_now(self):
+    now = datetime.now()
+    return now.strftime("%d/%m/%Y %H:%M:%S")
+
+  def get_best_item(self):
+    try:
+      return sorted(self.data, key=lambda k: k['price'])[0]
+    except Exception as e:
+      print(e)
+      print("Problem with sorting items")
+      return None
+
 
 class AmazonAPI:
   def __init__(self, search_term, filters, base_url, currency):
@@ -183,8 +215,6 @@ class AmazonAPI:
 
 
 if __name__ == '__main__':
-  print("Hi")
   amazon = AmazonAPI(NAME, FILTERS, BASE_URL, CURRENCY)
-  print(amazon.price_filter)
   data =  amazon.run()
-  print(data)
+  GenerateReport(NAME, FILTERS, BASE_URL, CURRENCY, data)
