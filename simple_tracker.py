@@ -33,6 +33,7 @@ class AmazonAPI:
     self.price_filter = f"&rh=p_36%3A{filters['min']}00-{filters['max']}00"   
     pass
 
+  # This is the MAIN function
   def run(self):
     print("Starting script...")
     print(f"Looking for {self.search_term} prodcuts...")
@@ -44,8 +45,9 @@ class AmazonAPI:
     print(f"Got {len(links)} links to products!")
     print("Getting info about products")
     products = self.get_products_info(links)
-
+    print(f"Fetched info about {len(products)} products...")
     self.driver.quit()
+    return products
 
   def get_products_info(self, links):
     # ASIN - Amazon Standard Identification Number
@@ -54,6 +56,9 @@ class AmazonAPI:
     products = []
     for asin in asins:
       product = self.get_single_product_info(asin)
+      if product:
+        products.append(products)
+    return products
 
   # Get info for each searched products
   def get_single_product_info(self, asin):
@@ -66,6 +71,18 @@ class AmazonAPI:
     title = self.get_title()
     seller = self.get_seller()
     price = self.get_price()
+
+    # Check if all 3 items were fetched for the product
+    if title and seller and price:
+      produc_info = {
+        'asin': asin,
+        'url': product_short_url,
+        'title': title,
+        'seller': seller,
+        'price': price
+      }
+      return produc_info
+    return None
 
   def get_title(self):
     try:
@@ -107,18 +124,18 @@ class AmazonAPI:
     return price
 
     # Convert the price string to a float
-    def convert_price(self, price):
-        price = price.split(self.currency)[1]
-        try:
-            price = price.split("\n")[0] + "." + price.split("\n")[1]
-        except:
-            Exception()
-        try:
-            price = price.split(",")[0] + price.split(",")[1]
-        except:
-            Exception()
-        return float(price)
-    
+  def convert_price(self, price):
+    price = price.split(self.currency)[1]
+    try:
+        price = price.split("\n")[0] + "." + price.split("\n")[1]
+    except:
+        Exception()
+    try:
+        price = price.split(",")[0] + price.split(",")[1]
+    except:
+        Exception()
+    return float(price)
+  
   # Remove all unnecessary attributes/product names/keywords from the long URL
   # This makes sure that our code works even if product names are changed (the ASIN never changes) 
   def shorten_url(self, asin):
@@ -169,4 +186,5 @@ if __name__ == '__main__':
   print("Hi")
   amazon = AmazonAPI(NAME, FILTERS, BASE_URL, CURRENCY)
   print(amazon.price_filter)
-  amazon.run()
+  data =  amazon.run()
+  print(data)
