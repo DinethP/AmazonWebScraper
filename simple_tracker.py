@@ -36,8 +36,45 @@ class AmazonAPI:
     print("Starting script...")
     print(f"Looking for {self.search_term} prodcuts...")
     links = self.get_products_links()
-    time.sleep(3)
+    time.sleep(1)
+    if not links:
+      print("Stopped script")
+      return
+    print(f"Got {len(links)} links to products!")
+    print("Getting info about products")
+    products = self.get_products_info(links)
+
     self.driver.quit()
+
+  def get_products_info(self, links):
+    # ASIN - Amazon Standard Identification Number
+    # asins is a list of all asins of searched items
+    asins = self.get_asins(links)
+    products = []
+    for asin in asins:
+      product = self.get_single_product_info(asin)
+
+  # Get info for each searched products
+  def get_single_product_info(self, asin):
+    print(f"Product ID: {asin} - fetching data...")
+    product_short_url = self.shorten_url(asin)
+    # The param is needed to change language
+    self.driver.get(f"{product_short_url}?language=en_GB")
+    time.sleep(2)
+
+  # Remove all unnecessary attributes/product names/keywords from the long URL
+  # This makes sure that our code works even if product names are changed (the ASIN never changes) 
+  def shorten_url(self, asin):
+    return self.base_url + 'dp/' + asin
+
+  # Get all ASIN's of all search items
+  def get_asins(self, links):
+    return [self.get_asin(link) for link in links]
+
+  # Get ASIN for each product from its link
+  def get_asin(self, product_link):
+    # Splice the link to get the unique product ID (it is inbetween '.../dp/' and '/ref...')
+    return product_link[product_link.find('/dp/') + 4:product_link.find('/ref')]  
 
   def get_products_links(self):
      # Open up the amazon website homepage using webdriver
