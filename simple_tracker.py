@@ -14,6 +14,8 @@ from selenium.common.exceptions import *
 import json
 from datetime import datetime
 import time
+from pprint import pprint
+
 
 class GenerateReport:
   def __init__(self, file_name, filters, base_link, currency, data):
@@ -33,7 +35,7 @@ class GenerateReport:
     }
     print("Creating report...")
     with open(f'{DIRECTORY}/{file_name}.json', 'w') as f:
-        json.dump(report, f)
+      json.dump(report, f)
     print("Done...")
 
   def get_now(self):
@@ -86,10 +88,10 @@ class AmazonAPI:
     # asins is a list of all asins of searched items
     asins = self.get_asins(links)
     products = []
-    for asin in asins:
+    for asin in asins: # Can splice this asins array to limit how many items we want to fetch
       product = self.get_single_product_info(asin)
       if product:
-        products.append(products)
+        products.append(product)
     return products
 
   # Get info for each searched products
@@ -200,12 +202,12 @@ class AmazonAPI:
     result_list = self.driver.find_elements_by_class_name('s-result-list') 
     links = []
     try:
-        #results will loop through each search item and get each of their links into an array
+        #results is an array of all items in the first search page. Each array element will have all the HTML elements of that item
         results = result_list[0].find_elements_by_xpath(  
             "//div/span/div/div/div[2]/div[2]/div/div[1]/div/div/div[1]/h2/a")
-        # Loop through the links in results and filter out the elements with href attribute (actual links)
+        # Loop through the HTML elements of that item and filter out the HTML elements with href attribute (actual links)
         links = [link.get_attribute('href') for link in results] 
-         # links is an array of all the links
+         # links is an array of all the links for that item
         return links
     # exception for when there are no links                                              
     except Exception as e:      
@@ -217,4 +219,5 @@ class AmazonAPI:
 if __name__ == '__main__':
   amazon = AmazonAPI(NAME, FILTERS, BASE_URL, CURRENCY)
   data =  amazon.run()
+  # print(data)
   GenerateReport(NAME, FILTERS, BASE_URL, CURRENCY, data)
