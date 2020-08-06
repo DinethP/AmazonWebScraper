@@ -14,7 +14,6 @@ from selenium.common.exceptions import *
 import json
 from datetime import datetime
 import time
-from pprint import pprint
 
 
 class GenerateReport:
@@ -83,6 +82,38 @@ class AmazonAPI:
     self.driver.quit()
     return products
 
+  def get_products_links(self):
+     # Open up the amazon website homepage using webdriver
+    self.driver.get(self.base_url)
+    # Search for item
+    element = self.driver.find_element_by_id("twotabsearchtextbox")
+    element.send_keys(self.search_term)
+    element.send_keys(Keys.ENTER)
+    # Wait to load page
+    time.sleep(2) 
+    # Concatenate price filter string to search results URl(the url
+    # that gives the search results)
+    self.driver.get(f"{self.driver.current_url}{self.price_filter}")
+     # Wait to load page
+    time.sleep(2)
+
+    # HTML parent element containing search results
+    result_list = self.driver.find_elements_by_class_name('s-result-list')
+    links = []
+    try:
+        #results is an array of all items in the first search page. Each array element will have all the HTML elements of each item
+        results = result_list[0].find_elements_by_xpath(  
+            "//div/span/div/div/div[2]/div[2]/div/div[1]/div/div/div[1]/h2/a")
+        # Loop through the HTML elements of that item and get the product link (actual link to the item)
+        links = [link.get_attribute('href') for link in results] 
+         # links is an array of all the links for each search item
+        return links
+    # exception for when there are no links                                              
+    except Exception as e:      
+        print("Didn't get any products...")
+        print(e)
+        return links
+
   def get_products_info(self, links):
     # ASIN - Amazon Standard Identification Number
     # asins is a list of all asins of searched items
@@ -108,14 +139,14 @@ class AmazonAPI:
 
     # Check if all 3 items were fetched for the product
     if title and seller and price:
-      produc_info = {
+      product_info = {
         'asin': asin,
         'url': product_short_url,
         'title': title,
         'seller': seller,
         'price': price
       }
-      return produc_info
+      return product_info
     return None
 
   def get_title(self):
@@ -143,6 +174,7 @@ class AmazonAPI:
     except NoSuchElementException:
       try:
           availability = self.driver.find_element_by_id('availability').text
+          # Check if string 'Available' is in the element text
           if 'Available' in availability:
               price = self.driver.find_element_by_class_name('olp-padding-right').text
               price = price[price.find(self.currency):]
@@ -182,42 +214,11 @@ class AmazonAPI:
   # Get ASIN for each product from its link
   def get_asin(self, product_link):
     # Splice the link to get the unique product ID (it is inbetween '.../dp/' and '/ref...')
+    # We +4 to start index to account for '/dp/'
     return product_link[product_link.find('/dp/') + 4:product_link.find('/ref')]  
-
-  def get_products_links(self):
-     # Open up the amazon website homepage using webdriver
-    self.driver.get(self.base_url)
-    element = self.driver.find_element_by_id("twotabsearchtextbox")
-    element.send_keys(self.search_term)
-    element.send_keys(Keys.ENTER)
-    # Wait to load page
-    time.sleep(2) 
-    # Concatenate price filter string to search item url(the url
-    # when we searched the search term)
-    self.driver.get(f"{self.driver.current_url}{self.price_filter}")
-     # Wait to load page
-    time.sleep(2)
-
-    # HTML parent element containing search results
-    result_list = self.driver.find_elements_by_class_name('s-result-list') 
-    links = []
-    try:
-        #results is an array of all items in the first search page. Each array element will have all the HTML elements of that item
-        results = result_list[0].find_elements_by_xpath(  
-            "//div/span/div/div/div[2]/div[2]/div/div[1]/div/div/div[1]/h2/a")
-        # Loop through the HTML elements of that item and filter out the HTML elements with href attribute (actual links)
-        links = [link.get_attribute('href') for link in results] 
-         # links is an array of all the links for that item
-        return links
-    # exception for when there are no links                                              
-    except Exception as e:      
-        print("Didn't get any products...")
-        print(e)
-        return links
 
 
 if __name__ == '__main__':
   amazon = AmazonAPI(NAME, FILTERS, BASE_URL, CURRENCY)
   data =  amazon.run()
-  # print(data)
   GenerateReport(NAME, FILTERS, BASE_URL, CURRENCY, data)
