@@ -1,4 +1,10 @@
 # AmazonWebScraper
 This is an Amazon Web Scraper built using Selenium and Chromedriver.
 
-Edit the NAME variable in amazon_config.py to change search term. 
+To run the webscraper, use the command:  
+```
+python3 simple_tracker.py
+``` <br />
+In ```amazon_config.py```:
+Edit ```NAME``` to change search term.
+Edit ```MIN_PRICE``` and ```MAX_PRICE``` to change Price Filters
